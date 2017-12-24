@@ -41,7 +41,7 @@ define oradb::installdb(
     notify {"create_user parameter on installdb ${title} can be removed, create_user feature is removed from this oradb module":}
   }
 
-  if (!( $version in ['11.2.0.1','12.1.0.1','12.1.0.2','11.2.0.3','11.2.0.4'])){
+  if (!( $version in ['11.2.0.1','12.1.0.1','12.1.0.2','12.2.0.1','11.2.0.3','11.2.0.4'])){
     fail('Unrecognized database install version, use 11.2.0.1|11.2.0.3|11.2.0.4|12.1.0.1|12.1.0.2')
   }
 
@@ -51,7 +51,7 @@ define oradb::installdb(
 
   if ( $version in ['11.2.0.1','11.2.0.3','11.2.0.4','12.1.0.1'] and !($database_type in ['EE','SE','SEONE'])) {
     fail('Unrecognized database type, please use EE|SE|SEONE')
-  } elsif ( $version in ['12.1.0.2'] and !($database_type in ['EE','SE2'])) {
+  } elsif ( $version in ['12.1.0.2','12.2.0.1'] and !($database_type in ['EE','SE2'])) {
     fail('Unrecognized database type, please use EE|SE2')
   }
 
@@ -105,6 +105,11 @@ define oradb::installdb(
     if ( $zip_extract ) {
       # In $download_dir, will Puppet extract the ZIP files or is this a pre-extracted directory structure.
 
+      if ( $version in ['12.2.0.1']) {
+        $file1 =  "${file}.zip"
+        $total_files = 1
+      }
+
       if ( $version in ['11.2.0.1','12.1.0.1','12.1.0.2']) {
         $file1 =  "${file}_1of2.zip"
         $file2 =  "${file}_2of2.zip"
@@ -126,15 +131,17 @@ define oradb::installdb(
           require => Db_directory_structure["oracle structure ${version}_${title}"],
           before  => Exec["extract ${download_dir}/${file1}"],
         }
-        # db file 2 installer zip
-        file { "${download_dir}/${file2}":
-          ensure  => present,
-          source  => "${mountPoint}/${file2}",
-          mode    => '0775',
-          owner   => $user,
-          group   => $group,
-          require => File["${download_dir}/${file1}"],
-          before  => Exec["extract ${download_dir}/${file2}"]
+        if ( $total_files > 1 ) {
+          # db file 2 installer zip
+          file { "${download_dir}/${file2}":
+            ensure  => present,
+            source  => "${mountPoint}/${file2}",
+            mode    => '0775',
+            owner   => $user,
+            group   => $group,
+            require => File["${download_dir}/${file1}"],
+            before  => Exec["extract ${download_dir}/${file2}"]
+          }
         }
         $source = $download_dir
       } else {
@@ -151,15 +158,17 @@ define oradb::installdb(
         require   => Db_directory_structure["oracle structure ${version}_${title}"],
         before    => Exec["install oracle database ${title}"],
       }
-      exec { "extract ${download_dir}/${file2}":
-        command   => "unzip -o ${source}/${file2} -d ${download_dir}/${file}",
-        timeout   => 0,
-        logoutput => false,
-        path      => $execPath,
-        user      => $user,
-        group     => $group,
-        require   => Exec["extract ${download_dir}/${file1}"],
-        before    => Exec["install oracle database ${title}"],
+      if ( $total_files > 1 ) {
+        exec { "extract ${download_dir}/${file2}":
+          command   => "unzip -o ${source}/${file2} -d ${download_dir}/${file}",
+          timeout   => 0,
+          logoutput => false,
+          path      => $execPath,
+          user      => $user,
+          group     => $group,
+          require   => Exec["extract ${download_dir}/${file1}"],
+          before    => Exec["install oracle database ${title}"],
+        }
       }
     }
 
@@ -266,14 +275,16 @@ define oradb::installdb(
             require => [Exec["install oracle database ${title}"],
                           Exec["run root.sh script ${title}"],],
           }
-          exec { "remove oracle db file2 ${file2} ${title}":
-            command => "rm -rf ${download_dir}/${file2}",
-            user    => 'root',
-            group   => 'root',
-            path    => $execPath,
-            cwd     => $oracle_base,
-            require => [Exec["install oracle database ${title}"],
-                        Exec["run root.sh script ${title}"],],
+          if ( $total_files > 1 ) {
+            exec { "remove oracle db file2 ${file2} ${title}":
+              command => "rm -rf ${download_dir}/${file2}",
+              user    => 'root',
+              group   => 'root',
+              path    => $execPath,
+              cwd     => $oracle_base,
+              require => [Exec["install oracle database ${title}"],
+                          Exec["run root.sh script ${title}"],],
+            }
           }
         }
       }

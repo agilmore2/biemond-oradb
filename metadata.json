@@ -1,5 +1,6 @@
 {
-  "author": "Edwin Biemond",
+  "author": "Edwin Biemond+Andrew Gilmore",
+  "data_provider": "hiera",
   "dependencies": [
     {
       "name": "puppetlabs/concat",
@@ -14,14 +15,19 @@
   "name": "biemond-oradb",
   "project_page": "https://github.com/biemond/biemond-oradb",
   "source": "https://github.com/biemond/biemond-oradb",
-  "summary": "Oracle Database 11.2 / 12.1 linux / solaris, Enterprise Manager 12c, GoldenGate, 11g RCU installer",
+  "summary": "Oracle Database 11.2, 12.1 & 12.2 for Linux & Solaris plus ASM, Client, Enterprise Manager & GoldenGate",
   "tags": [
     "database",
+    "asm",
+    "grid",
     "12c",
     "12.1",
+    "12.2",
     "oracle",
     "11g",
     "11gR2",
+    "11.2",
+    "client",
     "goldengate",
     "rcu",
     "fmw",
@@ -94,13 +100,9 @@
   ],
   "requirements": [
     {
-      "name": "pe",
-      "version_requirement": ">=2.7.20"
-    },
-    {
       "name": "puppet",
       "version_requirement": ">=2.7.20"
     }
   ],
-  "version": "2.0.11"
+  "version": "2.0.12"
 }
